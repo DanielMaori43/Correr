@@ -19,6 +19,7 @@ let polyline;
 let primeiraCoordenadaRecebida = false;
 
 function obterLocalizacaoInicial() {
+    console.log("Obtendo localização inicial...");
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(mostrarLocalizacaoInicial, tratarErroLocalizacaoInicial);
     } else {
@@ -28,9 +29,9 @@ function obterLocalizacaoInicial() {
 
 function mostrarLocalizacaoInicial(position) {
     const { latitude, longitude } = position.coords;
+    console.log("Localização Inicial Obtida:", latitude, longitude);
     inicializarMapa(latitude, longitude); // Inicializa o mapa com a localização inicial
     primeiraCoordenadaRecebida = true; // Marca que a primeira coordenada foi recebida
-    console.log("Localização Inicial:", latitude, longitude);
 }
 
 function tratarErroLocalizacaoInicial(error) {
@@ -39,6 +40,7 @@ function tratarErroLocalizacaoInicial(error) {
 }
 
 function iniciarCaminhada() {
+    console.log("Botão Iniciar Caminhada foi clicado!");
     startTime = Date.now();
     totalDistance = 0;
     previousPosition = null;
@@ -227,5 +229,6 @@ function atualizarMapaComNovaCoordenada(latitude, longitude) {
 // Chamar a função para obter a localização inicial assim que o script carregar
 obterLocalizacaoInicial();
 
+// Certificar que o event listener está aqui
 iniciarCaminhadaBotao.addEventListener('click', iniciarCaminhada);
 pararCaminhadaBotao.addEventListener('click', pararCaminhada);
