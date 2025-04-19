@@ -192,13 +192,6 @@ function inicializarGrafico() {
     });
 }
 
-function atualizarGrafico(timestamp) {
-    distanceData.push(totalDistance);
-    meuGrafico.data.labels = Array.from({ length: distanceData.length }, (_, i) => i + 1);
-    meuGrafico.data.datasets[0].data = distanceData;
-    meuGrafico.update();
-}
-
 function inicializarMapa(latitude, longitude) {
     mapa = L.map('mapa-container').setView([latitude, longitude], 15); // Centraliza na localização inicial
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -232,8 +225,8 @@ function atualizarMapaComNovaCoordenada(latitude, longitude) {
     }
 }
 
-// Chamar a função para obter a localização inicial assim que o script carregar
-obterLocalizacaoInicial();
+// Comentar a chamada para obter a localização inicial no carregamento
+// obterLocalizacaoInicial();
 
 // Certificar que o event listener está aqui
 iniciarCaminhadaBotao.addEventListener('click', iniciarCaminhada);
