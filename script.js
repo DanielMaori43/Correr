@@ -16,34 +16,49 @@ let pathCoordinates = [];
 let meuGrafico;
 let mapa;
 let polyline;
+let primeiraCoordenadaRecebida = false;
 
-function iniciarCaminhada() {
+function obterLocalizacaoInicial() {
     if (navigator.geolocation) {
-        startTime = Date.now();
-        totalDistance = 0;
-        previousPosition = null;
-        distanceData = [];
-        timeData = [];
-        pathCoordinates = [];
-        tempoDecorridoElement.textContent = '00:00:00';
-        distanciaPercorridaElement.textContent = '0.00 km';
-
-        watchId = navigator.geolocation.watchPosition(atualizarLocalizacao, tratarErro, {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0
-        });
-
-        timerInterval = setInterval(atualizarTempo, 1000);
-        iniciarCaminhadaBotao.disabled = true;
-        pararCaminhadaBotao.disabled = false;
-
-        inicializarGrafico();
-        inicializarMapa();
-
+        navigator.geolocation.getCurrentPosition(mostrarLocalizacaoInicial, tratarErroLocalizacaoInicial);
     } else {
         alert("Geolocalização não suportada neste navegador.");
     }
+}
+
+function mostrarLocalizacaoInicial(position) {
+    const { latitude, longitude } = position.coords;
+    inicializarMapa(latitude, longitude); // Inicializa o mapa com a localização inicial
+    primeiraCoordenadaRecebida = true; // Marca que a primeira coordenada foi recebida
+    console.log("Localização Inicial:", latitude, longitude);
+}
+
+function tratarErroLocalizacaoInicial(error) {
+    console.warn('Erro ao obter localização inicial:', error.message);
+    inicializarMapa(-20.0, -45.0); // Inicializa o mapa com a localização padrão em caso de erro
+}
+
+function iniciarCaminhada() {
+    startTime = Date.now();
+    totalDistance = 0;
+    previousPosition = null;
+    distanceData = [];
+    timeData = [];
+    pathCoordinates = [];
+    tempoDecorridoElement.textContent = '00:00:00';
+    distanciaPercorridaElement.textContent = '0.00 km';
+
+    inicializarGrafico();
+
+    watchId = navigator.geolocation.watchPosition(atualizarLocalizacao, tratarErro, {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+    });
+
+    timerInterval = setInterval(atualizarTempo, 1000);
+    iniciarCaminhadaBotao.disabled = true;
+    pararCaminhadaBotao.disabled = false;
 }
 
 function pararCaminhada() {
@@ -62,10 +77,17 @@ function atualizarLocalizacao(position) {
     const timestamp = position.timestamp;
 
     pathCoordinates.push([latitude, longitude]);
+    console.log("Coordenadas adicionadas:", latitude, longitude, "Tamanho do Path:", pathCoordinates.length);
+
+    if (!primeiraCoordenadaRecebida && mapa) {
+        mapa.setView([latitude, longitude], 15); // Centralizar na primeira localização (redundante agora, mas seguro)
+        primeiraCoordenadaRecebida = true;
+    }
 
     if (previousPosition) {
         const distance = calcularDistancia(previousPosition.latitude, previousPosition.longitude, latitude, longitude);
         totalDistance += distance;
+        console.log("Distância Incrementada:", distance, "Distância Total:", totalDistance);
     }
 
     previousPosition = { latitude, longitude };
@@ -73,14 +95,10 @@ function atualizarLocalizacao(position) {
 
     atualizarGrafico(timestamp);
     atualizarMapaComNovaCoordenada(latitude, longitude);
-
-    // Opcional: Enviar dados para o servidor Node.js
-    // enviarDadosParaServidor({ latitude, longitude, timestamp, distance: distance - (previousDistance || 0) });
-    // previousDistance = distance;
 }
 
 function tratarErro(error) {
-    console.warn('Erro ao obter localização:', error.message);
+    console.warn('Erro ao obter localização (rastreamento):', error.message);
 }
 
 function atualizarTempo() {
@@ -173,63 +191,41 @@ function inicializarGrafico() {
     });
 }
 
-function atualizarGrafico(timestamp) {
-    distanceData.push(totalDistance);
-    timeData.push(new Date(timestamp));
-
-    meuGrafico.data.labels = timeData;
-    meuGrafico.data.datasets[0].data = distanceData;
-    meuGrafico.update();
-}
-
-function inicializarMapa() {
-    mapa = L.map('mapa-container').setView([-20.0, -45.0], 13); // Coordenadas genéricas
+function inicializarMapa(latitude, longitude) {
+    mapa = L.map('mapa-container').setView([latitude, longitude], 15); // Centraliza na localização inicial
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(mapa);
 }
 
 function desenharRotaNoMapa() {
+    console.log("Desenhando rota. Tamanho do Path:", pathCoordinates.length, "Mapa Existente:", !!mapa);
     if (mapa && pathCoordinates.length > 1) {
         if (polyline) {
             mapa.removeLayer(polyline);
         }
         polyline = L.polyline(pathCoordinates, { color: 'blue' }).addTo(mapa);
         mapa.fitBounds(polyline.getBounds());
-    } else if (mapa && pathCoordinates.length === 1) {
+    } else if (mapa && pathCoordinates.length === 1 && mapa) {
         mapa.setView(pathCoordinates[0], 15); // Centralizar no ponto inicial se houver apenas um ponto
     }
 }
 
 function atualizarMapaComNovaCoordenada(latitude, longitude) {
+    console.log("Nova coordenada:", latitude, longitude, "Mapa Existente:", !!mapa, "Polyline Existente:", !!polyline);
     if (mapa) {
         if (!polyline) {
-            polyline = L.polyline([pathCoordinates[pathCoordinates.length - 1]], { color: 'blue' }).addTo(mapa);
+            polyline = L.polyline([latitude, longitude], { color: 'blue' }).addTo(mapa);
         } else {
             polyline.addLatLng([latitude, longitude]);
         }
-        // Opcional: Centralizar o mapa na última localização
+        // Opcional: Centralizar o mapa na última localização continuamente
         // mapa.setView([latitude, longitude], 15);
     }
 }
 
-// Opcional: Função para enviar dados para o servidor Node.js
-// async function enviarDadosParaServidor(data) {
-//     try {
-//         const response = await fetch('/api/location', {
-//             method: 'POST',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//             },
-//             body: JSON.stringify(data),
-//         });
-//         if (!response.ok) {
-//             console.error('Erro ao enviar dados para o servidor:', response.status);
-//         }
-//     } catch (error) {
-//         console.error('Erro ao enviar dados para o servidor:', error);
-//     }
-// }
+// Chamar a função para obter a localização inicial assim que o script carregar
+obterLocalizacaoInicial();
 
 iniciarCaminhadaBotao.addEventListener('click', iniciarCaminhada);
 pararCaminhadaBotao.addEventListener('click', pararCaminhada);
