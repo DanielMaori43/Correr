@@ -134,10 +134,13 @@ function deg2rad(deg) {
 }
 
 function inicializarGrafico() {
+    if (meuGrafico) {
+        meuGrafico.destroy();
+    }
     meuGrafico = new Chart(graficoCanvas, {
         type: 'line',
         data: {
-            labels: timeData.map(t => new Date(t)),
+            labels: Array.from({ length: distanceData.length }, (_, i) => i + 1), // Usando índice como label
             datasets: [{
                 label: 'Distância (km)',
                 data: distanceData,
@@ -150,20 +153,15 @@ function inicializarGrafico() {
         options: {
             scales: {
                 x: {
-                    type: 'time',
-                    time: {
-                        unit: 'second',
-                        displayFormats: {
-                            second: 'HH:mm:ss'
-                        }
-                    },
+                    type: 'linear',
                     title: {
                         display: true,
-                        text: 'Tempo (HH:MM:SS)',
+                        text: 'Número de Leituras',
                         color: '#e0e0e0'
                     },
                     ticks: {
-                        color: '#9e9e9e'
+                        color: '#9e9e9e',
+                        stepSize: 1
                     },
                     grid: {
                         color: '#373737'
@@ -192,6 +190,13 @@ function inicializarGrafico() {
             }
         }
     });
+}
+
+function atualizarGrafico(timestamp) {
+    distanceData.push(totalDistance);
+    meuGrafico.data.labels = Array.from({ length: distanceData.length }, (_, i) => i + 1);
+    meuGrafico.data.datasets[0].data = distanceData;
+    meuGrafico.update();
 }
 
 function inicializarMapa(latitude, longitude) {
@@ -227,8 +232,8 @@ function atualizarMapaComNovaCoordenada(latitude, longitude) {
     }
 }
 
-// Comentar a chamada para obter a localização inicial no carregamento
-// obterLocalizacaoInicial();
+// Chamar a função para obter a localização inicial assim que o script carregar
+obterLocalizacaoInicial();
 
 // Certificar que o event listener está aqui
 iniciarCaminhadaBotao.addEventListener('click', iniciarCaminhada);
