@@ -51,6 +51,7 @@ function iniciarCaminhada() {
     distanciaPercorridaElement.textContent = '0.00 km';
 
     inicializarGrafico();
+    inicializarMapa(-20.0, -45.0); // Inicializa o mapa com a localização padrão ao iniciar
 
     watchId = navigator.geolocation.watchPosition(atualizarLocalizacao, tratarErro, {
         enableHighAccuracy: true,
@@ -226,8 +227,8 @@ function atualizarMapaComNovaCoordenada(latitude, longitude) {
     }
 }
 
-// Chamar a função para obter a localização inicial assim que o script carregar
-obterLocalizacaoInicial();
+// Comentar a chamada para obter a localização inicial no carregamento
+// obterLocalizacaoInicial();
 
 // Certificar que o event listener está aqui
 iniciarCaminhadaBotao.addEventListener('click', iniciarCaminhada);
