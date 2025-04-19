@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu App de Caminhada</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+          integrity="sha512-xodZBNTC5n17Xt2atTPvknHGJwPi1duIWgEoPwzXeXPTvRdlPxdwi+nnQ7iixvvLXYJyrTMvUtxLD0AwtWI4TXL8w=="
+          crossorigin=""/>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #121212; /* Cor de fundo escura */
+            color: #f0f0f0; /* Cor do texto clara */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #bb86fc; /* Roxo claro para o título */
+            margin-bottom: 20px;
+        }
+
+        #grafico-container {
+            width: 90%;
+            max-width: 600px;
+            height: 250px;
+            border: 1px solid #373737; /* Borda mais escura */
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1e1e1e; /* Fundo do container do gráfico */
+            border-radius: 8px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        #meuGrafico {
+            width: 100%;
+            height: 100%;
+        }
+
+        #mapa-container {
+            width: 90%;
+            max-width: 600px;
+            height: 300px;
+            margin-bottom: 30px;
+            border: 1px solid #373737;
+            border-radius: 8px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        #info-tempo-distancia {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            align-items: center;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-item label {
+            display: block;
+            color: #9e9e9e; /* Cinza mais claro para os labels */
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .info-item span {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #e0e0e0;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            margin: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        #iniciar-caminhada {
+            background-color: #00c853; /* Verde para iniciar */
+            color: #fff;
+        }
+
+        #iniciar-caminhada:hover {
+            background-color: #00a545;
+        }
+
+        #parar-caminhada {
+            background-color: #d32f2f; /* Vermelho para parar */
+            color: #fff;
+        }
+
+        #parar-caminhada:hover {
+            background-color: #b02727;
+        }
+        h2{
+            color: #0c8531;
+        }
+    </style>
+</head>
+<body>
+    <h1>Meu App de Caminhada</h1>
+
+    <h2>Bora Daniel</h2>
+
+    <div id="grafico-container">
+        <canvas id="meuGrafico"></canvas>
+    </div>
+
+    <div id="mapa-container">
+        </div>
+
+    <div id="info-tempo-distancia">
+        <div class="info-item">
+            <label>Tempo:</label>
+            <span id="tempo-decorrido">00:00:00</span>
+        </div>
+        <div class="info-item">
+            <label>Distância:</label>
+            <span id="distancia-percorrida">0.00 km</span>
+        </div>
+    </div>
+
+    <button id="iniciar-caminhada">Iniciar Caminhada</button>
+    <button id="parar-caminhada" disabled>Parar Caminhada</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+            integrity="sha512-XQoYMMLkQM9VcgNUgy6QJKRCNJwJgYmGA/TMg5cUzu0JU0yj/eJJTyzo1dpdWrgNHlxhfgJBkk2lc8vyeVygc9hOQ=="
+            crossorigin=""></script>
+    <script src="script.js"></script>
+</body>
+</html>
