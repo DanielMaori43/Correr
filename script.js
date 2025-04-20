@@ -25,6 +25,7 @@ let ritmoInicial = null; // Para armazenar o ritmo inicial
 let tempoParado = 0;
 let paradoDesde = null;
 let audioAtivado = true; // Variável para controlar o estado do áudio
+let ritmoInicialRegistrado = false; // Nova flag para controlar o registro do ritmo inicial
 let ritmoDiminuiuAvisado = false; // Variável de controle para o aviso de ritmo diminuído
 const LIMIAR_VELOCIDADE = 0.1; // km/h
 const TEMPO_LIMITE_PARADO = 120000; // 2 minutos em milissegundos
@@ -75,6 +76,7 @@ function iniciarCaminhada() {
     feedbackElement.textContent = '';
     ritmoInicial = null;
     paradoDesde = null;
+    ritmoInicialRegistrado = false; // Resetar a flag ao iniciar uma nova caminhada
     ritmoDiminuiuAvisado = false; // Resetar a flag ao iniciar uma nova caminhada
 
     if (audioAtivado) falarMensagem("Caminhada iniciada!");
@@ -149,7 +151,8 @@ function atualizarLocalizacao(position) {
         }
         console.log("Ritmo Atual:", ritmoAtual, "min/km");
 
-        if (totalDistance > 0 && ritmoInicial === null && elapsedTimeInSeconds > 5) {
+        // Registro do ritmo inicial condicionado a tempo e distância
+        if (totalDistance > 0.1 && elapsedTimeInSeconds > 15 && ritmoInicial === null && !ritmoInicialRegistrado) {
             const ritmoEmSegundosPorKm = elapsedTimeInSeconds / totalDistance;
             const minutos = Math.floor(ritmoEmSegundosPorKm / 60);
             const segundos = Math.floor(ritmoEmSegundosPorKm % 60);
@@ -158,6 +161,7 @@ function atualizarLocalizacao(position) {
             if (feedbackElement) feedbackElement.textContent = mensagem;
             if (audioAtivado) falarMensagem(mensagem);
             console.log("Ritmo Inicial Definido:", ritmoInicial);
+            ritmoInicialRegistrado = true; // Marcar que o ritmo inicial foi registrado
         }
 
         if (ritmoInicial !== null) {
@@ -174,7 +178,7 @@ function atualizarLocalizacao(position) {
                 if (feedbackElement) feedbackElement.textContent = mensagem;
                 if (audioAtivado) falarMensagem(mensagem);
                 ritmoDiminuiuAvisado = false; // Resetar a flag se o ritmo acelerar
-            } else if (variacaoRitmo > 30) {
+            } else if (variacaoRitmo > 60) { // Aumentei o limiar para 60 segundos
                 if (!ritmoDiminuiuAvisado) { // Verificar se o aviso já foi dado
                     const mensagem = "Seu ritmo diminuiu.";
                     if (feedbackElement) feedbackElement.textContent = mensagem;
