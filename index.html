@@ -54,7 +54,7 @@
         #info-tempo-distancia {
             display: flex;
             gap: 30px;
-            margin-bottom: 30px;
+            margin-bottom: 10px; /* Reduzi um pouco a margem inferior */
             align-items: center;
         }
 
@@ -128,7 +128,13 @@
             <label>Distância:</label>
             <span id="distancia-percorrida">0.00 km</span>
         </div>
+        <div class="info-item">
+            <label>Ritmo:</label>
+            <span id="ritmo-atual">0:00</span>
+        </div>
     </div>
+
+    <div id="feedback-mensagem" style="margin-top: 10px; font-style: italic;"></div>
 
     <button id="iniciar-caminhada">Iniciar Caminhada</button>
     <button id="parar-caminhada" disabled>Parar Caminhada</button>
