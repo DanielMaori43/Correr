@@ -105,6 +105,24 @@
         h2{
             color: #0c8531;
         }
+
+        #toggle-audio {
+            padding: 10px;
+            font-size: 1.2em;
+            background-color: #424242;
+            color: #f0f0f0;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        #toggle-audio:hover {
+            background-color: #616161;
+        }
     </style>
 </head>
 <body>
@@ -136,8 +154,13 @@
 
     <div id="feedback-mensagem" style="margin-top: 10px; font-style: italic;"></div>
 
-    <button id="iniciar-caminhada">Iniciar Caminhada</button>
-    <button id="parar-caminhada" disabled>Parar Caminhada</button>
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button id="iniciar-caminhada">Iniciar Caminhada</button>
+        <button id="parar-caminhada" disabled>Parar Caminhada</button>
+        <button id="toggle-audio">
+            <span id="audio-icon">🔊</span>
+        </button>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
