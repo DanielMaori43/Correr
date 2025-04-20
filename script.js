@@ -4,6 +4,8 @@ const distanciaPercorridaElement = document.getElementById('distancia-percorrida
 const iniciarCaminhadaBotao = document.getElementById('iniciar-caminhada');
 const pararCaminhadaBotao = document.getElementById('parar-caminhada');
 const mapaContainer = document.getElementById('mapa-container');
+const ritmoAtualElement = document.getElementById('ritmo-atual');
+const feedbackElement = document.getElementById('feedback-mensagem');
 
 let watchId;
 let startTime;
@@ -17,6 +19,20 @@ let meuGrafico;
 let mapa;
 let polyline;
 let primeiraCoordenadaRecebida = false;
+let ritmoInicial = null; // Para armazenar o ritmo inicial
+let tempoParado = 0;
+let paradoDesde = null;
+const LIMIAR_VELOCIDADE = 0.1; // km/h
+const TEMPO_LIMITE_PARADO = 120000; // 2 minutos em milissegundos
+
+function falarMensagem(mensagem) {
+    if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(mensagem);
+        window.speechSynthesis.speak(utterance);
+    } else {
+        console.log("API de Text-to-Speech não suportada.");
+    }
+}
 
 function obterLocalizacaoInicial() {
     console.log("Obtendo localização inicial...");
@@ -30,13 +46,13 @@ function obterLocalizacaoInicial() {
 function mostrarLocalizacaoInicial(position) {
     const { latitude, longitude } = position.coords;
     console.log("Localização Inicial Obtida:", latitude, longitude);
-    inicializarMapa(latitude, longitude); // Inicializa o mapa com a localização inicial
-    primeiraCoordenadaRecebida = true; // Marca que a primeira coordenada foi recebida
+    inicializarMapa(latitude, longitude);
+    primeiraCoordenadaRecebida = true;
 }
 
 function tratarErroLocalizacaoInicial(error) {
     console.warn('Erro ao obter localização inicial:', error.message);
-    inicializarMapa(-20.0, -45.0); // Inicializa o mapa com a localização padrão em caso de erro
+    inicializarMapa(-20.0, -45.0);
 }
 
 function iniciarCaminhada() {
@@ -49,9 +65,14 @@ function iniciarCaminhada() {
     pathCoordinates = [];
     tempoDecorridoElement.textContent = '00:00:00';
     distanciaPercorridaElement.textContent = '0.00 km';
+    ritmoAtualElement.textContent = '0:00';
+    feedbackElement.textContent = '';
+    ritmoInicial = null;
+    paradoDesde = null;
 
+    falarMensagem("Caminhada iniciada!");
     inicializarGrafico();
-    inicializarMapa(-20.0, -45.0); // Inicializa o mapa com a localização padrão ao iniciar
+    inicializarMapa(-20.0, -45.0);
 
     watchId = navigator.geolocation.watchPosition(atualizarLocalizacao, tratarErro, {
         enableHighAccuracy: true,
@@ -70,6 +91,7 @@ function pararCaminhada() {
         clearInterval(timerInterval);
         iniciarCaminhadaBotao.disabled = false;
         pararCaminhadaBotao.disabled = true;
+        falarMensagem(`Caminhada finalizada. Distância total percorrida: ${totalDistance.toFixed(2)} quilômetros.`);
         console.log("Caminhada finalizada. Distância total:", totalDistance.toFixed(2) + " km");
         desenharRotaNoMapa();
     }
@@ -83,14 +105,81 @@ function atualizarLocalizacao(position) {
     console.log("Coordenadas adicionadas:", latitude, longitude, "Tamanho do Path:", pathCoordinates.length);
 
     if (!primeiraCoordenadaRecebida && mapa) {
-        mapa.setView([latitude, longitude], 15); // Centralizar na primeira localização (redundante agora, mas seguro)
+        mapa.setView([latitude, longitude], 15);
         primeiraCoordenadaRecebida = true;
+    }
+
+    let velocidadeAtual = 0;
+    if (position.coords.speed !== null) {
+        velocidadeAtual = position.coords.speed * 3.6; // Converter m/s para km/h
+    }
+
+    if (velocidadeAtual < LIMIAR_VELOCIDADE) {
+        if (paradoDesde === null) {
+            paradoDesde = Date.now();
+        } else if (Date.now() - paradoDesde > TEMPO_LIMITE_PARADO) {
+            falarMensagem("Você está parado há algum tempo. Tudo bem?");
+            paradoDesde = null; // Evitar repetição constante do alerta
+        }
+    } else {
+        paradoDesde = null;
     }
 
     if (previousPosition) {
         const distance = calcularDistancia(previousPosition.latitude, previousPosition.longitude, latitude, longitude);
         totalDistance += distance;
         console.log("Distância Incrementada:", distance, "Distância Total:", totalDistance);
+
+        const currentTime = Date.now();
+        const elapsedTimeInSeconds = Math.floor((currentTime - startTime) / 1000);
+
+        let ritmoAtual = '0:00';
+        if (totalDistance > 0) {
+            const ritmoEmSegundosPorKm = elapsedTimeInSeconds / totalDistance;
+            const minutos = Math.floor(ritmoEmSegundosPorKm / 60);
+            const segundos = Math.floor(ritmoEmSegundosPorKm % 60);
+            ritmoAtual = `${minutos}:${String(segundos).padStart(2, '0')}`;
+        }
+        console.log("Ritmo Atual:", ritmoAtual, "min/km");
+
+        if (totalDistance > 0 && ritmoInicial === null && elapsedTimeInSeconds > 5) {
+            const ritmoEmSegundosPorKm = elapsedTimeInSeconds / totalDistance;
+            const minutos = Math.floor(ritmoEmSegundosPorKm / 60);
+            const segundos = Math.floor(ritmoEmSegundosPorKm % 60);
+            ritmoInicial = `${minutos}:${String(segundos).padStart(2, '0')}`;
+            const mensagem = "Ritmo inicial registrado.";
+            if (feedbackElement) feedbackElement.textContent = mensagem;
+            falarMensagem(mensagem);
+            console.log("Ritmo Inicial Definido:", ritmoInicial);
+        }
+
+        if (ritmoInicial !== null) {
+            const ritmoAtualParts = ritmoAtual.split(':').map(Number);
+            const ritmoInicialParts = ritmoInicial.split(':').map(Number);
+
+            const ritmoAtualEmSegundos = ritmoAtualParts[0] * 60 + ritmoAtualParts[1];
+            const ritmoInicialEmSegundos = ritmoInicialParts[0] * 60 + ritmoInicialParts[1];
+
+            const variacaoRitmo = ritmoAtualEmSegundos - ritmoInicialEmSegundos;
+
+            if (variacaoRitmo < -15) {
+                const mensagem = "Você está acelerando!";
+                if (feedbackElement) feedbackElement.textContent = mensagem;
+                falarMensagem(mensagem);
+            } else if (variacaoRitmo > 30) {
+                const mensagem = "Seu ritmo diminuiu.";
+                if (feedbackElement) feedbackElement.textContent = mensagem;
+                falarMensagem(mensagem);
+            } else if (elapsedTimeInSeconds > 60 && Math.abs(variacaoRitmo) <= 10 && feedbackElement.textContent !== "Bom ritmo!") {
+                const mensagem = "Bom ritmo!";
+                if (feedbackElement) feedbackElement.textContent = mensagem;
+                falarMensagem(mensagem);
+            }
+        }
+
+        if (ritmoAtualElement) {
+            ritmoAtualElement.textContent = ritmoAtual;
+        }
     }
 
     previousPosition = { latitude, longitude };
@@ -140,7 +229,7 @@ function inicializarGrafico() {
     meuGrafico = new Chart(graficoCanvas, {
         type: 'line',
         data: {
-            labels: Array.from({ length: distanceData.length }, (_, i) => i + 1), // Usando índice como label
+            labels: Array.from({ length: distanceData.length }, (_, i) => i + 1),
             datasets: [{
                 label: 'Distância (km)',
                 data: distanceData,
@@ -193,7 +282,7 @@ function inicializarGrafico() {
 }
 
 function inicializarMapa(latitude, longitude) {
-    mapa = L.map('mapa-container').setView([latitude, longitude], 15); // Centraliza na localização inicial
+    mapa = L.map('mapa-container').setView([latitude, longitude], 15);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(mapa);
@@ -208,7 +297,7 @@ function desenharRotaNoMapa() {
         polyline = L.polyline(pathCoordinates, { color: 'blue' }).addTo(mapa);
         mapa.fitBounds(polyline.getBounds());
     } else if (mapa && pathCoordinates.length === 1 && mapa) {
-        mapa.setView(pathCoordinates[0], 15); // Centralizar no ponto inicial se houver apenas um ponto
+        mapa.setView(pathCoordinates[0], 15);
     }
 }
 
