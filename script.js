@@ -25,6 +25,7 @@ let ritmoInicial = null; // Para armazenar o ritmo inicial
 let tempoParado = 0;
 let paradoDesde = null;
 let audioAtivado = true; // Variável para controlar o estado do áudio
+let ritmoDiminuiuAvisado = false; // Variável de controle para o aviso de ritmo diminuído
 const LIMIAR_VELOCIDADE = 0.1; // km/h
 const TEMPO_LIMITE_PARADO = 120000; // 2 minutos em milissegundos
 
@@ -74,6 +75,7 @@ function iniciarCaminhada() {
     feedbackElement.textContent = '';
     ritmoInicial = null;
     paradoDesde = null;
+    ritmoDiminuiuAvisado = false; // Resetar a flag ao iniciar uma nova caminhada
 
     if (audioAtivado) falarMensagem("Caminhada iniciada!");
     inicializarGrafico();
@@ -171,14 +173,19 @@ function atualizarLocalizacao(position) {
                 const mensagem = "Você está acelerando!";
                 if (feedbackElement) feedbackElement.textContent = mensagem;
                 if (audioAtivado) falarMensagem(mensagem);
+                ritmoDiminuiuAvisado = false; // Resetar a flag se o ritmo acelerar
             } else if (variacaoRitmo > 30) {
-                const mensagem = "Seu ritmo diminuiu.";
-                if (feedbackElement) feedbackElement.textContent = mensagem;
-                if (audioAtivado) falarMensagem(mensagem);
+                if (!ritmoDiminuiuAvisado) { // Verificar se o aviso já foi dado
+                    const mensagem = "Seu ritmo diminuiu.";
+                    if (feedbackElement) feedbackElement.textContent = mensagem;
+                    if (audioAtivado) falarMensagem(mensagem);
+                    ritmoDiminuiuAvisado = true; // Marcar que o aviso foi dado
+                }
             } else if (elapsedTimeInSeconds > 60 && Math.abs(variacaoRitmo) <= 10 && feedbackElement.textContent !== "Bom ritmo!") {
                 const mensagem = "Bom ritmo!";
                 if (feedbackElement) feedbackElement.textContent = mensagem;
                 if (audioAtivado) falarMensagem(mensagem);
+                ritmoDiminuiuAvisado = false; // Resetar a flag se o ritmo estabilizar
             }
         }
 
