@@ -6,6 +6,8 @@ const pararCaminhadaBotao = document.getElementById('parar-caminhada');
 const mapaContainer = document.getElementById('mapa-container');
 const ritmoAtualElement = document.getElementById('ritmo-atual');
 const feedbackElement = document.getElementById('feedback-mensagem');
+const audioIcon = document.getElementById('audio-icon');
+const toggleAudioButton = document.getElementById('toggle-audio');
 
 let watchId;
 let startTime;
@@ -22,15 +24,18 @@ let primeiraCoordenadaRecebida = false;
 let ritmoInicial = null; // Para armazenar o ritmo inicial
 let tempoParado = 0;
 let paradoDesde = null;
+let audioAtivado = true; // Variável para controlar o estado do áudio
 const LIMIAR_VELOCIDADE = 0.1; // km/h
 const TEMPO_LIMITE_PARADO = 120000; // 2 minutos em milissegundos
 
 function falarMensagem(mensagem) {
-    if ('speechSynthesis' in window) {
+    if ('speechSynthesis' in window && audioAtivado) { // Verificar se o áudio está ativado
         const utterance = new SpeechSynthesisUtterance(mensagem);
         window.speechSynthesis.speak(utterance);
-    } else {
+    } else if (!('speechSynthesis' in window)) {
         console.log("API de Text-to-Speech não suportada.");
+    } else {
+        console.log("Avisos de voz estão desativados.");
     }
 }
 
@@ -70,7 +75,7 @@ function iniciarCaminhada() {
     ritmoInicial = null;
     paradoDesde = null;
 
-    falarMensagem("Caminhada iniciada!");
+    if (audioAtivado) falarMensagem("Caminhada iniciada!");
     inicializarGrafico();
     inicializarMapa(-20.0, -45.0);
 
@@ -91,7 +96,7 @@ function pararCaminhada() {
         clearInterval(timerInterval);
         iniciarCaminhadaBotao.disabled = false;
         pararCaminhadaBotao.disabled = true;
-        falarMensagem(`Caminhada finalizada. Distância total percorrida: ${totalDistance.toFixed(2)} quilômetros.`);
+        if (audioAtivado) falarMensagem(`Caminhada finalizada. Distância total percorrida: ${totalDistance.toFixed(2)} quilômetros.`);
         console.log("Caminhada finalizada. Distância total:", totalDistance.toFixed(2) + " km");
         desenharRotaNoMapa();
     }
@@ -149,7 +154,7 @@ function atualizarLocalizacao(position) {
             ritmoInicial = `${minutos}:${String(segundos).padStart(2, '0')}`;
             const mensagem = "Ritmo inicial registrado.";
             if (feedbackElement) feedbackElement.textContent = mensagem;
-            falarMensagem(mensagem);
+            if (audioAtivado) falarMensagem(mensagem);
             console.log("Ritmo Inicial Definido:", ritmoInicial);
         }
 
@@ -165,15 +170,15 @@ function atualizarLocalizacao(position) {
             if (variacaoRitmo < -15) {
                 const mensagem = "Você está acelerando!";
                 if (feedbackElement) feedbackElement.textContent = mensagem;
-                falarMensagem(mensagem);
+                if (audioAtivado) falarMensagem(mensagem);
             } else if (variacaoRitmo > 30) {
                 const mensagem = "Seu ritmo diminuiu.";
                 if (feedbackElement) feedbackElement.textContent = mensagem;
-                falarMensagem(mensagem);
+                if (audioAtivado) falarMensagem(mensagem);
             } else if (elapsedTimeInSeconds > 60 && Math.abs(variacaoRitmo) <= 10 && feedbackElement.textContent !== "Bom ritmo!") {
                 const mensagem = "Bom ritmo!";
                 if (feedbackElement) feedbackElement.textContent = mensagem;
-                falarMensagem(mensagem);
+                if (audioAtivado) falarMensagem(mensagem);
             }
         }
 
@@ -313,6 +318,13 @@ function atualizarMapaComNovaCoordenada(latitude, longitude) {
         // mapa.setView([latitude, longitude], 15);
     }
 }
+
+// Event listener para o botão de mudo/som
+toggleAudioButton.addEventListener('click', () => {
+    audioAtivado = !audioAtivado;
+    audioIcon.textContent = audioAtivado ? '🔊' : '🔇'; // Atualizar o ícone
+    console.log("Áudio ativado:", audioAtivado);
+});
 
 // Comentar a chamada para obter a localização inicial no carregamento
 // obterLocalizacaoInicial();
